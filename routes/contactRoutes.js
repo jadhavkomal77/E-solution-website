@@ -5,8 +5,9 @@ import { isAuth } from "../middleware/isAuth.js";
 const router = express.Router();
 
 router
-  .post("/", createContact)
+  // .post("/", createContact)
+  .post("/", isAuth, createContact)
   .get("/", isAuth, getAllContacts)
-  .delete("/:id", isAuth, deleteContact);
+  .delete("/:id", isAuth, deleteContact)
 
 export default router;

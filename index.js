@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 import adminRoutes from "./routes/adminRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import enquiryRoutes from "./routes/enquiryRoutes.js";
 
 dotenv.config({ path: "./.env" });
 
@@ -27,7 +29,10 @@ app.use(
 // Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/enquiry", enquiryRoutes)
+
 
 // 404 Handler
 app.use((req, res) => {
