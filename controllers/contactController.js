@@ -1,176 +1,83 @@
-
-
-// import Contact from "../models/Contact.js";
-
-// // ✅ Create new contact (with logged in user)
-// export const createContact = async (req, res) => {
-//   try {
-//     const { name, email, phone, service, message } = req.body;
-
-//     if (!name || !email || !phone || !service || !message) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     const newContact = await Contact.create({
-//       user: req.user ? req.user.id : null, // 🔗 login केलेला user असेल तर
-//       name,
-//       email,
-//       phone,
-//       service,
-//       message,
-//     });
-
-//     res.status(201).json({
-//       message: "Your message was sent successfully! Our representative will be in touch soon.",
-//       contact: newContact,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Error saving contact", error: err.message });
-//   }
-// };
-
-// // ✅ Get all contacts (Admin only)
-// export const getAllContacts = async (req, res) => {
-//   try {
-//     const contacts = await Contact.find()
-//       .populate("user", "name email") // 🔗 admin ला user ची माहिती दिसेल
-//       .sort({ createdAt: -1 });
-
-//     res.json({ message: "Contacts fetched successfully", result: contacts });
-//   } catch (err) {
-//     res.status(500).json({ message: "Error fetching contacts", error: err.message });
-//   }
-// };
-
-// // ✅ Delete contact
-// export const deleteContact = async (req, res) => {
-//   try {
-//     await Contact.findByIdAndDelete(req.params.id);
-//     res.json({ message: "Contact deleted successfully" });
-//   } catch (err) {
-//     res.status(500).json({ message: "Error deleting contact", error: err.message });
-//   }
-// };
-
-
-
-
-
-
-import axios from "axios";
 import Contact from "../models/Contact.js";
-
-// // ✅ Create new contact (with logged in user + WhatsApp Thank You Message)
-// export const createContact = async (req, res) => {
-//   try {
-//     const { name, email, phone, service, message } = req.body;
-
-//     if (!name || !email || !phone || !service || !message) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     // ✅ Save contact in DB
-//     const newContact = await Contact.create({
-//       user: req.user ? req.user.id : null, // 🔗 login केलेला user असेल तर
-//       name,
-//       email,
-//       phone,
-//       service,
-//       message,
-//     });
-
-//     // ✅ WhatsApp Thank You Message
-//     const whatsappToken = process.env.WHATSAPP_TOKEN;
-//     const phoneNumberId = process.env.WHATSAPP_PHONE_ID;
-
-//     // ✅ तयार करायचा मेसेज
-//     const textMsg = `Hello ${name}! 👋
-// Thank you for contacting our company regarding *${service}*.
-// We appreciate your interest and will get back to you shortly.`;
-
-//     // ✅ WhatsApp API कॉल
-//     await axios.post(
-//       `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`,
-//       {
-//         messaging_product: "whatsapp",
-//         to: `91${phone}`, 
-//         type: "text",
-//         text: { body: textMsg },
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${whatsappToken}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-
-//     // ✅ Success response
-//     res.status(201).json({
-//       message:
-//         "Your message was sent successfully! WhatsApp thank-you message sent.",
-//       contact: newContact,
-//     });
-//   } catch (err) {
-//     console.error("Error sending WhatsApp message:", err.message);
-//     res
-//       .status(500)
-//       .json({ message: "Error saving contact", error: err.message });
-//   }
-// };
+import Admin from "../models/Admin.js";
 export const createContact = async (req, res) => {
   try {
-    console.log("📩 Received Contact Data:", req.body);
-    console.log("👤 Logged in user:", req.user);
+    const { name, email, phone, service, message, slug } = req.body;
 
-    const { name, email, phone, service, message } = req.body;
+    console.log("BODY RECEIVED =", req.body);
 
     if (!name || !email || !phone || !service || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const newContact = await Contact.create({
-      user: req.user ? req.user.id : null,
+    let adminId;
+
+    // ⭐ CONDITION FIX — slug must be a valid string
+    if (slug && typeof slug === "string" && slug.trim() !== "") {
+      const admin = await Admin.findOne({ websiteSlug: slug.trim() });
+
+      if (!admin) {
+        return res.status(404).json({ message: "Invalid website slug" });
+      }
+
+      adminId = admin._id;
+    } else {
+      adminId = process.env.MAIN_ADMIN_ID;
+    }
+
+    if (!adminId) {
+      return res.status(500).json({ message: "Admin ID missing (backend error)" });
+    }
+
+    const contact = await Contact.create({
       name,
       email,
       phone,
       service,
       message,
+      adminId,
+      user: req.user?.id || null,
     });
 
-    res.status(201).json({
-      message: "Your message was sent successfully! Our representative will be in touch soon.",
-      contact: newContact,
+    return res.status(201).json({
+      success: true,
+      message: "Message submitted successfully!",
+      contact,
     });
   } catch (err) {
-    console.error("❌ Error in createContact:", err);
-    res.status(500).json({ message: "Error saving contact", error: err.message });
+    console.error("CONTACT CREATE ERROR:", err);
+    return res.status(500).json({ message: "Server error creating contact" });
   }
 };
 
-// ✅ Get all contacts (Admin only)
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find()
-      .populate("user", "name email") // 🔗 admin ला user ची माहिती दिसेल
-      .sort({ createdAt: -1 });
+    const adminId = req.user.id;
 
-    res.json({ message: "Contacts fetched successfully", result: contacts });
+    const contacts = await Contact.find({ adminId }).sort({ createdAt: -1 });
+
+    res.json({ success: true, contacts });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching contacts", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ Delete contact
 export const deleteContact = async (req, res) => {
   try {
-    await Contact.findByIdAndDelete(req.params.id);
-    res.json({ message: "Contact deleted successfully" });
+    const adminId = req.user.id;
+
+    const contact = await Contact.findById(req.params.id);
+
+    if (!contact)
+      return res.status(404).json({ message: "Contact not found" });
+
+    if (contact.adminId.toString() !== adminId)
+      return res.status(403).json({ message: "Not allowed" });
+
+    await contact.deleteOne();
+
+    res.json({ success: true, message: "Deleted successfully" });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error deleting contact", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };

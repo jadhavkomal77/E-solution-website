@@ -1,25 +1,33 @@
 import express from "express";
 import {
-  adminRegister,
   adminLogin,
   adminLogout,
   getAdminProfile,
   updateAdminProfile,
-  getAllAdmins,
-  deactivateAdmin
+  changeAdminPassword,
+  getMyProducts,
+  updateMyProduct,
+  deleteMyProduct,
+  getAdminStats,
 } from "../controllers/adminController.js";
-import { isAuth } from "../middleware/isAuth.js";
+
+import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/adminregister", adminRegister);
-router.post("/adminlogin", adminLogin);
-router.post("/adminlogout", adminLogout);
+/* PUBLIC ROUTES */
+router.post("/login", adminLogin);
 
-router.get("/adminprofile", isAuth, getAdminProfile);
-router.put("/adminprofileupdate", isAuth, updateAdminProfile);
+/* PROTECTED ROUTES */
+router.post("/logout", verifyToken, adminOnly, adminLogout);
+router.get("/profile", verifyToken, adminOnly, getAdminProfile);
+router.put("/update-profile", verifyToken, adminOnly, updateAdminProfile);
+router.put("/change-password", verifyToken, adminOnly, changeAdminPassword);
 
-router.get("/alladmin", isAuth, getAllAdmins);
-router.put("/deactivate/:id", isAuth, deactivateAdmin);
+router.get("/my-products", verifyToken, adminOnly, getMyProducts);
+router.put("/update-product/:id", verifyToken, adminOnly, updateMyProduct);
+router.delete("/delete-product/:id", verifyToken, adminOnly, deleteMyProduct);
+
+router.get("/stats", verifyToken, adminOnly, getAdminStats);
 
 export default router;

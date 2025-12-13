@@ -1,184 +1,233 @@
+
+import Admin from "../models/Admin.js";
+import Product from "../models/Product.js";
+import Service from "../models/Service.js";
+import Contact from "../models/Contact.js";
+import Enquiry from "../models/Enquiry.js";
+import Feedback from "../models/Feedback.js";
 import bcrypt from "bcryptjs";
-import validator from "validator";
 import jwt from "jsonwebtoken";
-import { checkEmpty } from "../utils/checkEmpty.js";
 import Upload from "../utils/upload.js";
 import cloudinary from "../utils/cloudinary.config.js";
-import Admin from "../models/Admin.js";
 
-// ------------------ Register ------------------ //
-export const adminRegister = async (req, res) => {
-  try {
-    const { name, email, phone, password } = req.body;
+const JWT_SECRET = process.env.JWT_KEY || "defaultsecret";
 
-    const { isError, error } = checkEmpty({ name, email, password });
-    if (isError)
-      return res.status(400).json({ message: "All fields required", error });
 
-    if (!validator.isEmail(email))
-      return res.status(400).json({ message: "Invalid email" });
+// export const adminLogin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
 
-    if (!validator.isStrongPassword(password))
-      return res.status(400).json({
-        message:
-          "Weak password. Include uppercase, lowercase, numbers & special characters.",
-      });
+//     const admin = await Admin.findOne({ email });
+//     if (!admin) return res.status(404).json({ message: "Admin Not Found" });
 
-    if (phone && !validator.isMobilePhone(phone, "en-IN"))
-      return res.status(400).json({ message: "Invalid phone number" });
+//     if (!admin.isActive)
+//       return res.status(403).json({ message: "Account Deactivated" });
 
-    const isFound = await Admin.findOne({ email });
-    if (isFound)
-      return res.status(409).json({ message: "Email already exists" });
+//     const match = await bcrypt.compare(password, admin.password);
+//     if (!match) return res.status(401).json({ message: "Wrong Password" });
 
-    const hash = await bcrypt.hash(password, 10);
-    const admin = await Admin.create({
-      name,
-      email,
-      mobile: phone,
-      role: "admin",
-      password: hash,
-    });
+//     const token = jwt.sign(
+//       { id: admin._id, role: "admin" },
+//       JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
 
-    res.json({
-      message: "Admin registered successfully",
-      result: admin,
-    });
-  } catch (err) {
-    console.error("Register Error:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
-  }
-};
+//     res.cookie("adminToken", token, {
+//       httpOnly: true,
+//       sameSite: "lax",
+//       secure: false
+//     });
 
-// ------------------ Login ------------------ //
+//     // ⭐ MOST IMPORTANT PART
+//     res.json({
+//       success: true,
+//       message: "Login Successful",
+//       token,
+//       admin: {
+//         id: admin._id,
+//         name: admin.name,
+//         email: admin.email,
+//         phone: admin.phone,
+//         role: admin.role
+//       }
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const isFound = await Admin.findOne({ email });
-    if (!isFound) return res.status(401).json({ message: "Email not found" });
-    if (!isFound.isActive)
-      return res
-        .status(403)
-        .json({ message: "Your account is deactivated. Please contact support." });
+    const admin = await Admin.findOne({ email });
+    if (!admin) return res.status(404).json({ message: "Admin Not Found" });
 
-    const isVerify = await bcrypt.compare(password, isFound.password);
-    if (!isVerify)
-      return res.status(401).json({ message: "Incorrect password" });
+    if (!admin.isActive)
+      return res.status(403).json({ message: "Account Deactivated" });
+
+    const match = await bcrypt.compare(password, admin.password);
+    if (!match) return res.status(401).json({ message: "Wrong Password" });
 
     const token = jwt.sign(
-      { userId: isFound._id, role: isFound.role },
+      { id: admin._id, role: "admin" },
       process.env.JWT_KEY,
-      { expiresIn: "24h" }
+      { expiresIn: "7d" }
     );
 
-    res.cookie("admin", token, {
-      maxAge: 1000 * 60 * 60 * 24,
+    res.cookie("adminToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
+      secure: false,
     });
 
     res.json({
-      message: "Login successful",
-      result: {
-        _id: isFound._id,
-        name: isFound.name,
-        email: isFound.email,
-        mobile: isFound.mobile,
-        role: isFound.role,
-      },
+      success: true,
       token,
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: "admin",
+      },
     });
   } catch (err) {
-    console.error("Login Error:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
-// ------------------ Logout ------------------ //
+// logout admin
 export const adminLogout = (req, res) => {
-  res.clearCookie("admin");
-  res.json({ message: "Logout successful" });
+  res.clearCookie("adminToken");
+  res.json({ success: true, message: "Logout Successful" });
 };
 
-// ------------------ Get Admin Profile ------------------ //
+// get profile
 export const getAdminProfile = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.userId).select("-password");
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
-    res.json({ message: "Profile fetched successfully", result: admin });
-  } catch (err) {
-    console.error("Profile Fetch Error:", err);
-    res
-      .status(500)
-      .json({ message: "Error fetching profile", error: err.message });
+    const admin = await Admin.findById(req.user.id).select("-password");
+    res.json({ success: true, admin });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// ------------------ Update Admin Profile ------------------ //
+//  UPDATE PROFILE 
 export const updateAdminProfile = async (req, res) => {
   try {
     Upload(req, res, async (err) => {
-      if (err)
-        return res.status(400).json({ message: "Upload error", error: err });
+      if (err) return res.status(400).json({ message: "Upload Error" });
 
       const { name, email, phone } = req.body;
-      const { isError, error } = checkEmpty({ name, email });
-      if (isError)
-        return res.status(400).json({ message: "All fields required", error });
+      let data = { name, email, phone };
 
-      let hero = "";
       if (req.file) {
-        const { secure_url } = await cloudinary.uploader.upload(req.file.path);
-        hero = secure_url;
+        const upload = await cloudinary.uploader.upload(req.file.path);
+        data.profile = upload.secure_url;
       }
 
-      const updatedAdmin = await Admin.findByIdAndUpdate(
-        req.user.userId,
-        { name, email, mobile: phone, hero },
-        { new: true, runValidators: true }
-      ).select("-password");
+      const updated = await Admin.findByIdAndUpdate(req.user.id, data, { new: true })
+        .select("-password");
 
-      res.json({
-        message: "Profile updated successfully",
-        result: updatedAdmin,
-      });
+      res.json({ success: true, message: "Profile Updated", admin: updated });
     });
-  } catch (err) {
-    console.error("Update Error:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// ------------------ Get All Admins (Superadmin Only) ------------------ //
-export const getAllAdmins = async (req, res) => {
-  try {
-    if (req.user.role !== "superadmin")
-      return res.status(403).json({ message: "Access denied" });
+//  CHANGE PASSWORD
 
-    const admins = await Admin.find().select("-password");
-    res.json({ message: "Admins fetched successfully", result: admins });
-  } catch (err) {
-    console.error("Get All Admins Error:", err);
-    res
-      .status(500)
-      .json({ message: "Error fetching admins", error: err.message });
+export const changeAdminPassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    const admin = await Admin.findById(req.user.id);
+    if (!admin) return res.status(404).json({ message: "Admin Not Found" });
+
+    const match = await bcrypt.compare(oldPassword, admin.password);
+    if (!match) return res.status(401).json({ message: "Old Password Incorrect" });
+
+    admin.password = await bcrypt.hash(newPassword, 10);
+    await admin.save();
+
+    res.json({ success: true, message: "Password Updated Successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// ------------------ Deactivate Admin (Superadmin Only) ------------------ //
-export const deactivateAdmin = async (req, res) => {
-  try {
-    if (req.user.role !== "superadmin")
-      return res.status(403).json({ message: "Access denied" });
+//  GET MY PRODUCTS
 
-    await Admin.findByIdAndUpdate(req.params.id, { isActive: false });
-    res.json({ message: "Admin deactivated successfully" });
-  } catch (err) {
-    console.error("Deactivate Error:", err);
-    res
-      .status(500)
-      .json({ message: "Error deactivating admin", error: err.message });
+export const getMyProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ assignedTo: req.user.id });
+
+    res.json({ success: true, total: products.length, products });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//  UPDATE MY PRODUCT
+
+export const updateMyProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product Not Found" });
+
+    if (product.assignedTo.toString() !== req.user.id)
+      return res.status(403).json({ message: "Access Denied" });
+
+    let data = req.body;
+
+    if (req.file) {
+      const upload = await cloudinary.uploader.upload(req.file.path);
+      data.image = upload.secure_url;
+    }
+
+    const updated = await Product.findByIdAndUpdate(req.params.id, data, { new: true });
+
+    res.json({ success: true, message: "Product Updated", product: updated });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//  DELETE MY PRODUCT
+
+export const deleteMyProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product Not Found" });
+
+    if (product.assignedTo.toString() !== req.user.id)
+      return res.status(403).json({ message: "Access Denied" });
+
+    await product.deleteOne();
+    res.json({ success: true, message: "Product Deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//  ADMIN DASHBOARD STATS 
+
+export const getAdminStats = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+
+    const stats = {
+      products: await Product.countDocuments({ assignedTo: adminId }),
+      services: await Service.countDocuments({ assignedTo: adminId }),
+      contacts: await Contact.countDocuments({ adminId }),
+      enquiries: await Enquiry.countDocuments({ adminId }),
+      feedbacks: await Feedback.countDocuments({ adminId }),
+    };
+
+    res.json({ success: true, stats });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

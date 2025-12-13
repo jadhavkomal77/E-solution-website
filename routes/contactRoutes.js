@@ -1,13 +1,14 @@
 import express from "express";
 import { createContact, getAllContacts, deleteContact } from "../controllers/contactController.js";
-import { isAuth } from "../middleware/isAuth.js";
+import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router
-  // .post("/", createContact)
-  .post("/", isAuth, createContact)
-  .get("/", isAuth, getAllContacts)
-  .delete("/:id", isAuth, deleteContact)
+// PUBLIC
+router.post("/", createContact);
+
+// ADMIN
+router.get("/", verifyToken, adminOnly, getAllContacts);
+router.delete("/:id", verifyToken, adminOnly, deleteContact);
 
 export default router;

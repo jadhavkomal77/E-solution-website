@@ -1,21 +1,27 @@
 import express from "express";
+import Upload from "../utils/upload.js";
 
 import {
   addProduct,
   getProducts,
-  getProductById,
   updateProduct,
   deleteProduct,
+  getPublicProducts,
+  getSingleProductPublic
 } from "../controllers/productController.js";
-import { isAuth } from "../middleware/isAuth.js";
-import Upload from "../utils/upload.js";
+
+import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/add", isAuth, Upload, addProduct);
-router.get("/all", getProducts);
-router.get("/single/:id", getProductById);
-router.put("/update/:id", isAuth, Upload, updateProduct);
-router.delete("/delete/:id", isAuth, deleteProduct);
+// ⭐ PUBLIC ROUTES
+router.get("/public", getPublicProducts);
+router.get("/public/:id", getSingleProductPublic);
+
+// ⭐ ADMIN ROUTES
+router.post("/add", verifyToken, adminOnly, Upload, addProduct);
+router.get("/all", verifyToken, adminOnly, getProducts);
+router.put("/update/:id", verifyToken, adminOnly, Upload, updateProduct);
+router.delete("/delete/:id", verifyToken, adminOnly, deleteProduct);
 
 export default router;

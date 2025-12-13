@@ -3,18 +3,22 @@ import {
   createFeedback,
   getAllFeedbacks,
   getMyFeedbacks,
-  deleteFeedback,
+  deleteFeedback
 } from "../controllers/feedbackController.js";
-import { isAuth } from "../middleware/isAuth.js";
+
+import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
+import { attachAdminId } from "../middleware/assignId.js";
 
 const router = express.Router();
 
-// User Routes
-router.post("/", isAuth, createFeedback);
-router.get("/my", isAuth, getMyFeedbacks);
+// User
+// router.post("/:adminId", attachAdminId, verifyToken, createFeedback);
+router.post("/", verifyToken, attachAdminId, createFeedback);
 
-// Admin Routes
-router.get("/", isAuth, getAllFeedbacks);
-router.delete("/:id", isAuth, deleteFeedback);
+router.get("/my", verifyToken, getMyFeedbacks);
+
+// Admin
+router.get("/", verifyToken, adminOnly, getAllFeedbacks);
+router.delete("/:id", verifyToken, adminOnly, deleteFeedback);
 
 export default router;

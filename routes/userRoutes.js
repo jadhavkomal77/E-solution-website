@@ -1,20 +1,22 @@
-
-
 import express from "express";
 import {
   registerUser,
   loginUser,
-  getProfile,
   logoutUser,
+  getProfile
 } from "../controllers/userController.js";
-import { isAuth } from "../middleware/isAuth.js";
+
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Public
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.get("/profile", isAuth, getProfile);
-router.get("/logout", logoutUser);
+
+// Protected
+router.use(verifyToken);
+router.get("/profile", getProfile);
+router.post("/logout", logoutUser);
 
 export default router;
-

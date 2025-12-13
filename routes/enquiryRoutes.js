@@ -6,17 +6,18 @@ import {
   updateEnquiryStatus,
   deleteEnquiry,
 } from "../controllers/enquiryController.js";
-// import { protect, adminOnly } from "../middleware/authMiddleware.js"; // if using auth
+
+import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🧑‍💼 User
+// USER
 router.post("/", createEnquiry);
-router.get("/my", getMyEnquiries);
+router.get("/my", verifyToken, getMyEnquiries);
 
-// 👨‍💼 Admin
-router.get("/", getAllEnquiries);
-router.put("/:id/status", updateEnquiryStatus);
-router.delete("/:id", deleteEnquiry);
+// ADMIN
+router.get("/", verifyToken, adminOnly, getAllEnquiries);
+router.put("/:id/status", verifyToken, adminOnly, updateEnquiryStatus);
+router.delete("/:id", verifyToken, adminOnly, deleteEnquiry);
 
 export default router;
