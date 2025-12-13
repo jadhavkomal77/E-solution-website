@@ -156,10 +156,10 @@ app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/logs", activityRoutes);
 
 /* ===================== 🔥 REACT SPA FALLBACK ===================== */
-/* ⚠️ Refresh / direct URL fix */
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
+
 
 /* ===================== ERROR HANDLER ===================== */
 app.use((err, req, res, next) => {
