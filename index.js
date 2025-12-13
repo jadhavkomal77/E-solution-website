@@ -155,10 +155,11 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/logs", activityRoutes);
 
-/* ===================== 🔥 REACT SPA FALLBACK ===================== */
-app.get("/*", (req, res) => {
+// 🔥 React SPA fallback — Express v5 SAFE
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
+
 
 
 /* ===================== ERROR HANDLER ===================== */
