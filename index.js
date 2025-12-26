@@ -114,6 +114,10 @@ import aboutRoutes from "./routes/aboutRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import heroRoutes from "./routes/heroRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import navbarRoutes from "./routes/navbarRoutes.js"
+import footerRoutes from "./routes/footerRoutes.js"
 
 dotenv.config();
 
@@ -154,6 +158,10 @@ app.use("/api/about", aboutRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/logs", activityRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/hero", heroRoutes);
+app.use("/api/navbar", navbarRoutes);
+app.use("/api/footer", footerRoutes);
 
 // 🔥 React SPA fallback — Express v5 SAFE
 app.use((req, res) => {

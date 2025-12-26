@@ -1,4 +1,5 @@
 import Product from "../models/Product.js";
+import Admin from "../models/Admin.js";
 import cloudinary from "../utils/cloudinary.config.js";
 
 // ADD PRODUCT
@@ -40,28 +41,63 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// PUBLIC → All Products
-export const getPublicProducts = async (req, res) => {
+
+
+// 🌍 PUBLIC → Products by WEBSITE SLUG
+export const getPublicProductsBySlug = async (req, res) => {
   try {
-    const products = await Product.find().select("-assignedTo -createdBy");
+    const { slug } = req.params;
+
+    // 1️⃣ Find admin by websiteSlug
+    const admin = await Admin.findOne({
+      websiteSlug: slug,
+      isActive: true,
+    });
+
+    if (!admin) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    // 2️⃣ Fetch ONLY this admin products
+    const products = await Product.find({
+      adminId: admin._id,
+    }).select("-assignedTo -createdBy");
+
     res.json({ success: true, result: products });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// PUBLIC → Single Product
+// 🌍 PUBLIC → Single product (SAFE)
 export const getSingleProductPublic = async (req, res) => {
   try {
-    const p = await Product.findById(req.params.id);
+    const { slug, id } = req.params;
 
-    if (!p) return res.status(404).json({ message: "Not found" });
+    const admin = await Admin.findOne({
+      websiteSlug: slug,
+      isActive: true,
+    });
 
-    res.json({ success: true, product: p });
+    if (!admin) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    const product = await Product.findOne({
+      _id: id,
+      adminId: admin._id,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({ success: true, product });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // UPDATE PRODUCT
 export const updateProduct = async (req, res) => {

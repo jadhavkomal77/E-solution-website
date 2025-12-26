@@ -10,8 +10,8 @@ import {
   deleteMyProduct,
   getAdminStats,
 } from "../controllers/adminController.js";
+import { adminOnly, verifyToken } from "../middleware/authMiddleware.js";
 
-import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -31,3 +31,5 @@ router.delete("/delete-product/:id", verifyToken, adminOnly, deleteMyProduct);
 router.get("/stats", verifyToken, adminOnly, getAdminStats);
 
 export default router;
+
+

@@ -1,54 +1,103 @@
-// // middleware/assignId.js
 
-// export const attachAdminId = (req, res, next) => {
+
+// import Admin from "../models/Admin.js";
+
+// export const attachAdminId = async (req, res, next) => {
 //   try {
-//     const adminId = req.params.adminId;
-
-//     if (!adminId) {
-//       return res.status(400).json({ message: "Admin ID missing in URL" });
+//     // 🔐 Admin panel
+//     if (req.user?.id) {
+//       req.adminId = req.user.id;
+//       return next();
 //     }
 
-//     // ⭐ Add adminId directly in body so controller can read it
-//     req.body.adminId = adminId;
+//     // 🌍 Public website (slug)
+//     if (req.params?.slug) {
+//       const admin = await Admin.findOne({
+//         websiteSlug: req.params.slug,
+//         isActive: true,
+//       });
 
-//     next();
-//   } catch (error) {
-//     console.error("attachAdminId Error:", error);
-//     res.status(500).json({ message: "Middleware Error", error: error.message });
+//       if (!admin) {
+//         return res.status(404).json({ message: "Website not found" });
+//       }
+
+//       req.adminId = admin._id;
+//       return next();
+//     }
+
+//     return res.status(400).json({ message: "AdminId not resolved" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
 //   }
 // };
 
 
-// middleware/assignId.js
+
+
+// import Admin from "../models/Admin.js";
+
+// export const attachAdminId = async (req, res, next) => {
+//   try {
+//     // 🔐 ADMIN PANEL (logged in admin)
+//     if (req.user?.id) {
+//       req.adminId = req.user.id;
+//       return next();
+//     }
+
+//     // 🌍 PUBLIC WEBSITE (slug based)
+//     if (req.params?.slug) {
+//       const admin = await Admin.findOne({
+//         slug: req.params.slug,   // ✅ ONLY CHANGE
+//         isActive: true,
+//       });
+
+//       if (!admin) {
+//         return res.status(404).json({ message: "Website not found" });
+//       }
+
+//       req.adminId = admin._id;
+//       return next();
+//     }
+
+//     return res.status(400).json({ message: "AdminId not resolved" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
 import Admin from "../models/Admin.js";
 
 export const attachAdminId = async (req, res, next) => {
   try {
-    let adminId = null;
-
-    // 🟢 1️⃣ Old flow support (URL based)
-    if (req.params?.adminId) {
-      adminId = req.params.adminId;
+    // 🔐 ADMIN PANEL
+    if (req.user?.id) {
+      req.adminId = req.user.id;
+      return next();
     }
 
-    // 🟢 2️⃣ New flow support (auto resolve admin)
-    if (!adminId) {
-      const admin = await Admin.findOne({ isActive: true });
-      if (admin) adminId = admin._id;
+    // 🌍 PUBLIC WEBSITE (slug based)
+    if (req.params?.slug) {
+      const admin = await Admin.findOne({
+        websiteSlug: req.params.slug, // ✅ FIX HERE
+        isActive: true,
+      });
+// const admin = await Admin.findOne({
+//   slug: req.params.slug,
+//   isActive: true,
+// });
+
+      if (!admin) {
+        return res.status(404).json({ message: "Website not found" });
+      }
+
+      req.adminId = admin._id;
+      return next();
     }
 
-    // ❌ If still not found
-    if (!adminId) {
-      return res.status(400).json({ message: "Admin not found" });
-    }
-
-    // ⭐ Attach in both places for backward compatibility
-    req.adminId = adminId;
-    req.body.adminId = adminId;
-
-    next();
-  } catch (error) {
-    console.error("attachAdminId Error:", error);
-    res.status(500).json({ message: "Middleware Error", error: error.message });
+    return res.status(400).json({ message: "AdminId not resolved" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

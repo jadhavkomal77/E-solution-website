@@ -1,32 +1,19 @@
 import Contact from "../models/Contact.js";
-import Admin from "../models/Admin.js";
+
+/* ======================================================
+   PUBLIC → CREATE CONTACT
+====================================================== */
 export const createContact = async (req, res) => {
   try {
-    const { name, email, phone, service, message, slug } = req.body;
-
-    console.log("BODY RECEIVED =", req.body);
+    const { name, email, phone, service, message } = req.body;
 
     if (!name || !email || !phone || !service || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    let adminId;
-
-    // ⭐ CONDITION FIX — slug must be a valid string
-    if (slug && typeof slug === "string" && slug.trim() !== "") {
-      const admin = await Admin.findOne({ websiteSlug: slug.trim() });
-
-      if (!admin) {
-        return res.status(404).json({ message: "Invalid website slug" });
-      }
-
-      adminId = admin._id;
-    } else {
-      adminId = process.env.MAIN_ADMIN_ID;
-    }
-
-    if (!adminId) {
-      return res.status(500).json({ message: "Admin ID missing (backend error)" });
+    // ⭐ ALWAYS FROM MIDDLEWARE
+    if (!req.adminId) {
+      return res.status(400).json({ message: "Admin not resolved" });
     }
 
     const contact = await Contact.create({
@@ -35,48 +22,58 @@ export const createContact = async (req, res) => {
       phone,
       service,
       message,
-      adminId,
+      adminId: req.adminId,
       user: req.user?.id || null,
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: "Message submitted successfully!",
+      message: "Message sent successfully",
       contact,
     });
   } catch (err) {
-    console.error("CONTACT CREATE ERROR:", err);
-    return res.status(500).json({ message: "Server error creating contact" });
+    console.error("CONTACT ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+/* ======================================================
+   ADMIN → GET OWN CONTACTS
+====================================================== */
 export const getAllContacts = async (req, res) => {
   try {
-    const adminId = req.user.id;
+    const contacts = await Contact.find({
+      adminId: req.user.id,
+    }).sort({ createdAt: -1 });
 
-    const contacts = await Contact.find({ adminId }).sort({ createdAt: -1 });
-
-    res.json({ success: true, contacts });
+    res.json({
+      success: true,
+      contacts,
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
+/* ======================================================
+   ADMIN → DELETE OWN CONTACT
+====================================================== */
 export const deleteContact = async (req, res) => {
   try {
-    const adminId = req.user.id;
-
     const contact = await Contact.findById(req.params.id);
 
     if (!contact)
       return res.status(404).json({ message: "Contact not found" });
 
-    if (contact.adminId.toString() !== adminId)
+    if (contact.adminId.toString() !== req.user.id)
       return res.status(403).json({ message: "Not allowed" });
 
     await contact.deleteOne();
 
-    res.json({ success: true, message: "Deleted successfully" });
+    res.json({
+      success: true,
+      message: "Deleted successfully",
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }

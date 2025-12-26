@@ -1,20 +1,15 @@
+
+import Admin from "../models/Admin.js";
 import Feedback from "../models/Feedback.js";
 
-/* ======================================================
-   USER → CREATE FEEDBACK
-====================================================== */
+  //  USER → CREATE FEEDBACK
+// 👤 USER → CREATE FEEDBACK (LOGIN REQUIRED)
 export const createFeedback = async (req, res) => {
   try {
     const { name, email, rating, message } = req.body;
 
-    // Validation
-    if (!name || !email || !rating || !message) {
-      return res.status(400).json({ message: "All fields required" });
-    }
-
-    // adminId MUST come from middleware / context
-    if (!req.adminId) {
-      return res.status(400).json({ message: "Admin not resolved" });
+    if (!req.user) {
+      return res.status(401).json({ message: "Login required" });
     }
 
     const fb = await Feedback.create({
@@ -22,8 +17,8 @@ export const createFeedback = async (req, res) => {
       email,
       rating,
       message,
-      userId: req.user.id,   // from token
-      adminId: req.adminId,  // ⭐ secure source
+      userId: req.user.id,    // ✅ OK
+      adminId: req.adminId,   // ✅ from middleware
     });
 
     res.status(201).json({
@@ -31,29 +26,62 @@ export const createFeedback = async (req, res) => {
       message: "Feedback submitted successfully",
       feedback: fb,
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
+// 🌍 PUBLIC → CREATE FEEDBACK
+export const createPublicFeedback = async (req, res) => {
+  try {
+    const { name, email, rating, message } = req.body;
+
+    if (!name || !email || !rating || !message) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    // ⭐ adminId already from attachAdminId
+    const fb = await Feedback.create({
+      name,
+      email,
+      rating,
+      message,
+      adminId: req.adminId,
+      userId: null,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Feedback submitted successfully",
+      feedback: fb,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 /* ======================================================
    ADMIN → GET OWN FEEDBACKS
 ====================================================== */
 export const getAllFeedbacks = async (req, res) => {
   try {
-    const list = await Feedback.find({ adminId: req.user.id })
-      .sort({ createdAt: -1 });
+    const list = await Feedback.find({
+      adminId: req.user.id, // ⭐ KEY LINE
+    }).sort({ createdAt: -1 });
 
     res.json({
       success: true,
       feedbacks: list,
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /* ======================================================
    USER → GET MY FEEDBACKS

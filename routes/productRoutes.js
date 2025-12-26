@@ -6,8 +6,8 @@ import {
   getProducts,
   updateProduct,
   deleteProduct,
-  getPublicProducts,
-  getSingleProductPublic
+  getSingleProductPublic,
+  getPublicProductsBySlug
 } from "../controllers/productController.js";
 
 import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
@@ -15,8 +15,10 @@ import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // ⭐ PUBLIC ROUTES
-router.get("/public", getPublicProducts);
-router.get("/public/:id", getSingleProductPublic);
+// 🌍 PUBLIC ROUTES (slug based)
+router.get("/public/:slug", getPublicProductsBySlug);
+router.get("/public/:slug/:id", getSingleProductPublic);
+
 
 // ⭐ ADMIN ROUTES
 router.post("/add", verifyToken, adminOnly, Upload, addProduct);

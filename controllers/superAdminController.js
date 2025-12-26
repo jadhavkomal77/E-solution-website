@@ -140,12 +140,58 @@ export const getAllAdmins = async (req, res) => {
 };
 
 
+// export const createAdmin = async (req, res) => {
+//   try {
+//     const { name, email, password, phone } = req.body;
+
+//     const exists = await Admin.findOne({ email });
+//     if (exists) return res.status(400).json({ message: "Admin already exists" });
+
+//     const hashed = await bcrypt.hash(password, 10);
+
+//     const admin = await Admin.create({
+//       name,
+//       email,
+//       password: hashed,
+//       phone,
+//       role: "admin",
+//       isActive: true,
+//       assignedProducts: [],
+//       assignedWebsite: null,
+//     });
+
+//    await logActivity(
+//   req.user.id,
+//   req.user.role,
+//   "Create Admin",
+//   `Created new admin: ${admin.name}`,
+//   req.ip
+// );
+
+
+//     res.json({ success: true, message: "Admin Created", admin });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 export const createAdmin = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, websiteSlug } = req.body;
 
-    const exists = await Admin.findOne({ email });
-    if (exists) return res.status(400).json({ message: "Admin already exists" });
+    if (!websiteSlug) {
+      return res.status(400).json({ message: "websiteSlug is required" });
+    }
+
+    const exists = await Admin.findOne({
+      $or: [{ email }, { websiteSlug }],
+    });
+
+    if (exists) {
+      return res.status(400).json({
+        message: "Admin or websiteSlug already exists",
+      });
+    }
 
     const hashed = await bcrypt.hash(password, 10);
 
@@ -154,26 +200,25 @@ export const createAdmin = async (req, res) => {
       email,
       password: hashed,
       phone,
+      websiteSlug: websiteSlug.toLowerCase(),
       role: "admin",
       isActive: true,
-      assignedProducts: [],
-      assignedWebsite: null,
     });
 
-   await logActivity(
-  req.user.id,
-  req.user.role,
-  "Create Admin",
-  `Created new admin: ${admin.name}`,
-  req.ip
-);
+    await logActivity(
+      req.user.id,
+      req.user.role,
+      "Create Admin",
+      `Admin ${admin.name} created (${admin.websiteSlug})`,
+      req.ip
+    );
 
-
-    res.json({ success: true, message: "Admin Created", admin });
+    res.json({ success: true, admin });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 export const updateAdmin = async (req, res) => {
   try {

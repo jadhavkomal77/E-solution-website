@@ -3,22 +3,28 @@ import {
   createFeedback,
   getAllFeedbacks,
   getMyFeedbacks,
-  deleteFeedback
+  deleteFeedback,
+  createPublicFeedback
 } from "../controllers/feedbackController.js";
 
 import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 import { attachAdminId } from "../middleware/assignId.js";
 
 const router = express.Router();
+// 🌍 PUBLIC
+router.post(
+  "/public/:slug",
+  attachAdminId,
+  createPublicFeedback
+);
 
-// User
-// router.post("/:adminId", attachAdminId, verifyToken, createFeedback);
-router.post("/", verifyToken, attachAdminId, createFeedback);
-
+// 👤 USER
+router.post("/", verifyToken, createFeedback);
 router.get("/my", verifyToken, getMyFeedbacks);
 
-// Admin
+// 🛡️ ADMIN
 router.get("/", verifyToken, adminOnly, getAllFeedbacks);
 router.delete("/:id", verifyToken, adminOnly, deleteFeedback);
+
 
 export default router;

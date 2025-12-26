@@ -18,15 +18,15 @@ const router = express.Router();
 ======================= */
 
 // Get services by website slug
+// 🌍 PUBLIC → Get services by website slug
 router.get("/public/:slug", async (req, res) => {
   try {
-    let admin;
+    const { slug } = req.params;
 
-    if (req.params.slug === "main") {
-      admin = await Admin.findOne();
-    } else {
-      admin = await Admin.findOne({ websiteSlug: req.params.slug });
-    }
+    const admin = await Admin.findOne({
+      websiteSlug: slug,
+      isActive: true,
+    });
 
     if (!admin) {
       return res.status(404).json({
@@ -35,13 +35,22 @@ router.get("/public/:slug", async (req, res) => {
       });
     }
 
-    const services = await Service.find({ adminId: admin._id });
-    res.json({ success: true, services });
+    // 🔥 ONLY THIS ADMIN SERVICES
+    const services = await Service.find({
+      adminId: admin._id,
+      status: true,
+    });
+
+    res.json({
+      success: true,
+      services,
+    });
 
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ✅ PUBLIC → single service by ID
 router.get("/public/details/:id", async (req, res) => {

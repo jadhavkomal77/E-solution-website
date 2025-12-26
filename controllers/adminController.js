@@ -13,50 +13,6 @@ import cloudinary from "../utils/cloudinary.config.js";
 const JWT_SECRET = process.env.JWT_KEY || "defaultsecret";
 
 
-// export const adminLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const admin = await Admin.findOne({ email });
-//     if (!admin) return res.status(404).json({ message: "Admin Not Found" });
-
-//     if (!admin.isActive)
-//       return res.status(403).json({ message: "Account Deactivated" });
-
-//     const match = await bcrypt.compare(password, admin.password);
-//     if (!match) return res.status(401).json({ message: "Wrong Password" });
-
-//     const token = jwt.sign(
-//       { id: admin._id, role: "admin" },
-//       JWT_SECRET,
-//       { expiresIn: "7d" }
-//     );
-
-//     res.cookie("adminToken", token, {
-//       httpOnly: true,
-//       sameSite: "lax",
-//       secure: false
-//     });
-
-//     // ⭐ MOST IMPORTANT PART
-//     res.json({
-//       success: true,
-//       message: "Login Successful",
-//       token,
-//       admin: {
-//         id: admin._id,
-//         name: admin.name,
-//         email: admin.email,
-//         phone: admin.phone,
-//         role: admin.role
-//       }
-//     });
-
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -231,3 +187,4 @@ export const getAdminStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+

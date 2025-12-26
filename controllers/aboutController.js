@@ -1,78 +1,72 @@
+// controllers/aboutController.js
 import About from "../models/About.js";
 
-// GET ABOUT
+/* ======================================================
+   GET ABOUT
+   - Admin panel  → req.user.id
+   - Public site  → req.adminId (from attachAdminId)
+====================================================== */
 export const getAbout = async (req, res) => {
   try {
-    let data = await About.findOne();
+    // 🔑 Resolve adminId from either source
+    const adminId = req.user?.id || req.adminId;
 
-    if (!data) {
-      data = await About.create({
-        mainTitle: "About Us",
-        mainDescription: "Add your content from admin panel",
+    if (!adminId) {
+      return res.status(400).json({ message: "Admin not resolved" });
+    }
 
-        features: [
-          { icon: "Shield", title: "", description: "" },
-          { icon: "Award", title: "", description: "" },
-          { icon: "Users", title: "", description: "" },
-          { icon: "Zap", title: "", description: "" }
-        ],
+    let about = await About.findOne({ adminId });
 
-        whyChoose: [
-          { icon: "Check", title: "", description: "" }
-        ],
-
+    // 🆕 First time → create empty about for that admin
+    if (!about) {
+      about = await About.create({
+        adminId,
+        mainTitle: "",
+        mainDescription: "",
+        features: [],
+        whyChoose: [],
         stats: {
           year: "",
           projects: "",
           satisfaction: "",
-          coverage: ""
-        }
+          coverage: "",
+        },
       });
     }
 
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    res.json(about);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-
-// UPDATE ABOUT
+/* ======================================================
+   UPDATE ABOUT (ADMIN ONLY)
+====================================================== */
 export const updateAbout = async (req, res) => {
   try {
-    const body = req.body;
+    const adminId = req.user.id; // 🔐 logged-in admin only
 
-    // ensure arrays
-    body.features = (body.features || []).map(f => ({
-      icon: f.icon || "",
-      title: f.title || "",
-      description: f.description || ""
-    }));
-
-    body.whyChoose = (body.whyChoose || []).map(w => ({
-      icon: w.icon || "",
-      title: w.title || "",
-      description: w.description || ""
-    }));
-
-    body.stats = body.stats || {
-      year: "",
-      projects: "",
-      satisfaction: "",
-      coverage: ""
-    };
-
-    const updated = await About.findOneAndUpdate({}, body, {
-      new: true,
-      upsert: true
-    });
+    const updated = await About.findOneAndUpdate(
+      { adminId },                 // ⭐ KEY → per admin document
+      {
+        $set: {
+          ...req.body,
+          adminId,
+        },
+      },
+      {
+        new: true,
+        upsert: true,              // 🆕 create if not exists
+      }
+    );
 
     res.json({
-      message: "Updated Successfully ✅",
-      data: updated
+      success: true,
+      message: "About page updated successfully",
+      data: updated,
     });
-
-  } catch (error) {
-    res.status(500).json({ message: "Update Failed", error });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
