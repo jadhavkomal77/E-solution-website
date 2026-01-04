@@ -2,7 +2,7 @@
 import express from "express";
 
 import { verifyToken, superAdminOnly } from "../../middleware/authMiddleware.js";
-import { createOrder, getAllPayments, verifyPayment } from "../../controllers/superadmin/superadminpaymentController.js";
+import { createOrder, getAllPayments, verifyPayment } from "../../controllers/superadmin/SuperAdminPaymentController.js";
 
 const router = express.Router();
 
