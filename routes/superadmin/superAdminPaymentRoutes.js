@@ -6,8 +6,6 @@ import { createOrder, getAllPayments, verifyPayment } from "../../controllers/su
 
 
 
-
-
 const router = express.Router();
 
 router.post("/create-order", createOrder);
