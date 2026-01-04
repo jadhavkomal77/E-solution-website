@@ -1,24 +1,43 @@
+
+
 import Contact from "../models/Contact.js";
+import validator from "validator";
+import sanitizeHtml from "sanitize-html";
 
 /* ======================================================
-   PUBLIC → CREATE CONTACT
+   PUBLIC → CREATE CONTACT (Secure)
 ====================================================== */
 export const createContact = async (req, res) => {
   try {
-    const { name, email, phone, service, message } = req.body;
+    let { name, email, phone, service, message } = req.body;
 
+    // Basic Required Validation
     if (!name || !email || !phone || !service || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // ⭐ ALWAYS FROM MIDDLEWARE
+    // Email & Phone Format Check
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (!validator.isMobilePhone(phone.toString(), "en-IN")) {
+      return res.status(400).json({ message: "Invalid phone number" });
+    }
+
+    // Prevent XSS Attack
+    name = sanitizeHtml(name);
+    service = sanitizeHtml(service);
+    message = sanitizeHtml(message);
+
+    // ⭐ Admin Identification Provided by Middleware
     if (!req.adminId) {
       return res.status(400).json({ message: "Admin not resolved" });
     }
 
     const contact = await Contact.create({
       name,
-      email,
+      email: email.toLowerCase(),
       phone,
       service,
       message,
@@ -29,34 +48,36 @@ export const createContact = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Message sent successfully",
-      contact,
+      contactId: contact._id,
     });
   } catch (err) {
-    console.error("CONTACT ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("CONTACT CREATE ERROR:", err.message);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
 /* ======================================================
-   ADMIN → GET OWN CONTACTS
+   ADMIN → GET OWN CONTACTS (Protected)
 ====================================================== */
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find({
-      adminId: req.user.id,
-    }).sort({ createdAt: -1 });
+    const contacts = await Contact.find({ adminId: req.user.id })
+      .sort({ createdAt: -1 })
+      .select("-__v");
 
     res.json({
       success: true,
+      total: contacts.length,
       contacts,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("CONTACT FETCH ERROR:", err.message);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
 /* ======================================================
-   ADMIN → DELETE OWN CONTACT
+   ADMIN → DELETE OWN CONTACT (Protected)
 ====================================================== */
 export const deleteContact = async (req, res) => {
   try {
@@ -66,7 +87,7 @@ export const deleteContact = async (req, res) => {
       return res.status(404).json({ message: "Contact not found" });
 
     if (contact.adminId.toString() !== req.user.id)
-      return res.status(403).json({ message: "Not allowed" });
+      return res.status(403).json({ message: "Unauthorized" });
 
     await contact.deleteOne();
 
@@ -75,6 +96,7 @@ export const deleteContact = async (req, res) => {
       message: "Deleted successfully",
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("CONTACT DELETE ERROR:", err.message);
+    res.status(500).json({ message: "Server Error" });
   }
 };

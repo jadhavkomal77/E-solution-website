@@ -1,272 +1,323 @@
+
+
+
+// import SuperAdmin from "../models/SuperAdmin.js";
+// import Admin from "../models/Admin.js";
+// import Product from "../models/Product.js";
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+// import Upload from "../utils/upload.js";
+// import cloudinary from "../utils/cloudinary.config.js";
+// import { logActivity } from "../utils/logActivity.js";
+
+// const JWT_SECRET = process.env.JWT_KEY || "defaultsecret";
+
+
+// // REGISTER SUPERADMIN
+// export const superAdminRegister = async (req, res) => {
+//   try {
+//     const { name, email, password, phone } = req.body;
+
+//     const exists = await SuperAdmin.findOne({ email });
+//     if (exists)
+//       return res.status(400).json({ message: "Email already registered" });
+
+//     const superAdmin = await SuperAdmin.create({
+//       name,
+//       email,
+//       phone,
+//       password,
+//     });
+
+//     res.json({ success: true, message: "Registration Successful", superAdmin });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+// // LOGIN SUPERADMIN
+// export const superAdminLogin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const superAdmin = await SuperAdmin.findOne({ email });
+//     if (!superAdmin)
+//       return res.status(404).json({ message: "Invalid Email" });
+
+//     const match = await bcrypt.compare(password, superAdmin.password);
+//     if (!match)
+//       return res.status(401).json({ message: "Invalid Password" });
+
+//     const token = jwt.sign(
+//       { id: superAdmin._id, role: "superadmin" },
+//       JWT_SECRET,
+//       { expiresIn: "7d" }
+//     );
+
+//     res.cookie("superToken", token, {
+//       httpOnly: true,
+//       sameSite: "strict",
+//       secure: false,
+//     });
+
+//     await logActivity(
+//       superAdmin._id,
+//       "superadmin",
+//       "Login",
+//       `${superAdmin.name} logged in`,
+//       req.ip
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Login Successful",
+//       token,
+//       superAdmin: {
+//         id: superAdmin._id,
+//         name: superAdmin.name,
+//         email: superAdmin.email,
+//         phone: superAdmin.phone,
+//       },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+// // LOGOUT
+// export const superAdminLogout = async (req, res) => {
+//   res.clearCookie("superToken");
+//   res.json({ success: true, message: "Logged Out" });
+// };
+
+
+
 import SuperAdmin from "../models/SuperAdmin.js";
 import Admin from "../models/Admin.js";
-import Product from "../models/Product.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Upload from "../utils/upload.js";
+import { uploadSingle } from "../utils/upload.js";
 import cloudinary from "../utils/cloudinary.config.js";
 import { logActivity } from "../utils/logActivity.js";
+import BlacklistedToken from "../models/BlacklistedToken.js";
 
-const JWT_SECRET = process.env.JWT_KEY || "defaultsecret";
+const JWT_SECRET = process.env.JWT_KEY;
 
+// const cookieOptions = {
+//   httpOnly: true,
+//   sameSite: "strict",
+//   secure: process.env.NODE_ENV === "production"
+// };
+const cookieOptions = {
+  httpOnly: true,
+  secure: false,  // local dev
+  sameSite: "lax",
+  path: "/"
+};
 
+// REGISTER SUPERADMIN
 export const superAdminRegister = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
+    if (!name || !email || !password || !phone)
+      return res.status(400).json({ message: "All fields are required" });
 
     const exists = await SuperAdmin.findOne({ email });
     if (exists)
-      return res.status(400).json({ message: "SuperAdmin already exists" });
+      return res.status(400).json({ message: "Email already registered" });
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPass = await bcrypt.hash(password, 10);
 
     const superAdmin = await SuperAdmin.create({
       name,
       email,
-      password: hashed,
       phone,
+      password: hashedPass,
     });
 
-    res.json({ success: true, message: "SuperAdmin Registered", superAdmin });
+    res.status(201).json({
+      success: true,
+      message: "Registration Successful",
+      superAdmin
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-
+// LOGIN SUPERADMIN
 export const superAdminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const superAdmin = await SuperAdmin.findOne({ email });
     if (!superAdmin)
-      return res.status(404).json({ message: "SuperAdmin Not Found" });
+      return res.status(404).json({ message: "Invalid Email or Password" });
 
-    const check = await bcrypt.compare(password, superAdmin.password);
-    if (!check) return res.status(401).json({ message: "Wrong Password" });
+    const match = await bcrypt.compare(password, superAdmin.password);
+    if (!match)
+      return res.status(401).json({ message: "Invalid Email or Password" });
 
     const token = jwt.sign(
       { id: superAdmin._id, role: "superadmin" },
-      process.env.JWT_KEY,
-      { expiresIn: "7d" }
+      JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
-    res.cookie("superToken", token, {
-      httpOnly: true,
-      sameSite: "strict",
-    });
+    res.cookie("superToken", token, cookieOptions);
 
-  await logActivity(
-  superAdmin._id,
-  "superadmin",
-  "SuperAdmin Login",
-  `${superAdmin.name} logged in`,
-  req.ip
-);
     res.json({
       success: true,
       message: "Login Successful",
-      token,
-      superadmin: {
+      admin: {
         id: superAdmin._id,
         name: superAdmin.name,
         email: superAdmin.email,
-        phone: superAdmin.phone,
       },
     });
-
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-export const superAdminLogout = (req, res) => {
-  res.clearCookie("superToken");
-  res.json({ success: true, message: "Logged Out" });
+// LOGOUT
+export const superAdminLogout = async (req, res) => {
+  try {
+    const token = req.cookies?.superToken;
+
+    if (token) {
+      const decoded = jwt.decode(token);
+      if (decoded?.exp) {
+        await BlacklistedToken.create({
+          token,
+          expiresAt: new Date(decoded.exp * 1000),
+        });
+      }
+    }
+
+    res.clearCookie("superToken", cookieOptions);
+    res.json({ success: true, message: "Successfully Logged Out" });
+  } catch (error) {
+    res.status(500).json({ message: "Logout Failed" });
+  }
 };
 
+// GET PROFILE
 export const getSuperAdminProfile = async (req, res) => {
   try {
     const profile = await SuperAdmin.findById(req.user.id).select("-password");
     res.json({ success: true, profile });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
+// UPDATE PROFILE
 export const updateSuperAdminProfile = async (req, res) => {
-  try {
-    Upload(req, res, async (err) => {
-      if (err) return res.status(400).json({ message: "Upload Error", err });
+  uploadSingle("profile")(req, res, async (err) => {
+    try {
+      if (err) return res.status(400).json({ message: err.message });
 
       const { name, email, phone } = req.body;
-      let data = { name, email, phone };
+      let updateData = { name, email, phone };
 
       if (req.file) {
-        const upload = await cloudinary.uploader.upload(req.file.path);
-        data.profile = upload.secure_url;
+        const upload = await cloudinary.uploader.upload(req.file.path, {
+          folder: "superadmin_profiles",
+        });
+        updateData.profile = upload.secure_url;
       }
 
-      const updated = await SuperAdmin.findByIdAndUpdate(req.user.id, data, {
-        new: true,
-      }).select("-password");
-
-      await logActivity(
+      const updated = await SuperAdmin.findByIdAndUpdate(
         req.user.id,
-        "Update Profile",
-        `SuperAdmin updated profile`,
-        req.ip
-      );
+        updateData,
+        { new: true }
+      ).select("-password");
 
       res.json({
         success: true,
-        message: "Profile Updated",
-        superAdmin: updated,
+        message: "Profile Updated Successfully",
+        updated,
       });
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+
+    } catch (error) {
+      res.status(500).json({ message: "Server Error" });
+    }
+  });
 };
 
-
+// GET ALL ADMINS
 export const getAllAdmins = async (req, res) => {
   try {
-    const admins = await Admin.find().select("-password").sort({ createdAt: -1 });
+    const admins = await Admin.find().select("-password");
     res.json({ success: true, admins });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-
-// export const createAdmin = async (req, res) => {
-//   try {
-//     const { name, email, password, phone } = req.body;
-
-//     const exists = await Admin.findOne({ email });
-//     if (exists) return res.status(400).json({ message: "Admin already exists" });
-
-//     const hashed = await bcrypt.hash(password, 10);
-
-//     const admin = await Admin.create({
-//       name,
-//       email,
-//       password: hashed,
-//       phone,
-//       role: "admin",
-//       isActive: true,
-//       assignedProducts: [],
-//       assignedWebsite: null,
-//     });
-
-//    await logActivity(
-//   req.user.id,
-//   req.user.role,
-//   "Create Admin",
-//   `Created new admin: ${admin.name}`,
-//   req.ip
-// );
-
-
-//     res.json({ success: true, message: "Admin Created", admin });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
+// CREATE ADMIN
 export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, phone, websiteSlug } = req.body;
 
-    if (!websiteSlug) {
-      return res.status(400).json({ message: "websiteSlug is required" });
-    }
+    if (!websiteSlug)
+      return res.status(400).json({ message: "websiteSlug required" });
 
     const exists = await Admin.findOne({
       $or: [{ email }, { websiteSlug }],
     });
 
-    if (exists) {
-      return res.status(400).json({
-        message: "Admin or websiteSlug already exists",
-      });
-    }
+    if (exists)
+      return res.status(400).json({ message: "Email or Slug already exists" });
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await Admin.create({
       name,
       email,
-      password: hashed,
       phone,
-      websiteSlug: websiteSlug.toLowerCase(),
+      password: hashedPassword,
       role: "admin",
       isActive: true,
+      websiteSlug: websiteSlug.toLowerCase(),
     });
 
-    await logActivity(
-      req.user.id,
-      req.user.role,
-      "Create Admin",
-      `Admin ${admin.name} created (${admin.websiteSlug})`,
-      req.ip
-    );
-
     res.json({ success: true, admin });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-
+// UPDATE ADMIN
 export const updateAdmin = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
-
-    let data = { name, email, phone };
-    if (password) data.password = await bcrypt.hash(password, 10);
+    const data = { ...req.body };
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
 
     const admin = await Admin.findByIdAndUpdate(req.params.id, data, {
       new: true,
-    });
+    }).select("-password");
 
-  await logActivity(
-  req.user.id,
-  req.user.role,
-  "Update Admin",
-  `Updated admin: ${admin.name}`,
-  req.ip
-);
-    res.json({ success: true, message: "Admin Updated", admin });
+    res.json({ success: true, admin });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-
+// DELETE ADMIN
 export const deleteAdmin = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.params.id);
-    if (!admin) return res.status(404).json({ message: "Admin Not Found" });
-
-    await admin.deleteOne();
-   await logActivity(
-  req.user.id,
-  req.user.role,
-  "Delete Admin",
-  `Deleted admin: ${admin.name}`,
-  req.ip
-);
-
-
+    await Admin.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: "Admin Deleted" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-
+// TOGGLE ADMIN
 export const toggleAdminStatus = async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
@@ -276,55 +327,12 @@ export const toggleAdminStatus = async (req, res) => {
     admin.isActive = !admin.isActive;
     await admin.save();
 
-   await logActivity(
-  req.user.id,
-  req.user.role,
-  "Toggle Admin Status",
-  `${admin.name} is now ${admin.isActive ? "Active" : "Inactive"}`,
-  req.ip
-);
-
     res.json({
       success: true,
-      message: admin.isActive ? "Admin Activated" : "Admin Deactivated",
-      admin,
+      message: `${admin.name} is now ${admin.isActive ? "Active" : "Inactive"}`,
     });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-export const assignProducts = async (req, res) => {
-  try {
-    const { adminId, productIds } = req.body;
-
-    const admin = await Admin.findById(adminId);
-    if (!admin)
-      return res.status(404).json({ message: "Admin not found" });
-
-    admin.assignedProducts = productIds;
-    await admin.save();
-
-    await Product.updateMany(
-      { _id: { $in: productIds } },
-      { assignedTo: adminId }
-    );
-   await logActivity(
-  req.user.id,
-  req.user.role,
-  "Assign Products",
-  `Assigned ${productIds.length} products to admin: ${admin.name}`,
-  req.ip
-);
-
-
-    res.json({
-      success: true,
-      message: "Products assigned successfully",
-      assigned: admin.assignedProducts,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server Error" });
   }
 };

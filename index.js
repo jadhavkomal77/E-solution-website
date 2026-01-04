@@ -1,98 +1,4 @@
 
-// import express from "express";
-// import mongoose from "mongoose";
-// import cors from "cors";
-// import path from "path";
-// import cookieParser from "cookie-parser";
-// import dotenv from "dotenv";
-// import fs from "fs"; 
-// import adminRoutes from "./routes/adminRoutes.js";
-// import contactRoutes from "./routes/contactRoutes.js";
-// import userRoutes from "./routes/userRoutes.js";
-// import feedbackRoutes from "./routes/feedbackRoutes.js";
-// import enquiryRoutes from "./routes/enquiryRoutes.js";
-// import productRoutes from "./routes/productRoutes.js";
-// import aboutRoutes from "./routes/aboutRoutes.js";
-// import serviceRoutes from "./routes/serviceRoutes.js";
-// import superAdminRoutes from "./routes/superAdminRoutes.js";
-// import activityRoutes from "./routes/activityRoutes.js";
-
-
-
-// dotenv.config({ path: "./.env" });
-
-// const app = express();
-// const __dirname = path.resolve();
-
-// // ✅ Ensure uploads folder exists
-// const uploadDir = path.join(__dirname, "uploads");
-// if (!fs.existsSync(uploadDir)) {
-//   fs.mkdirSync(uploadDir);
-//   console.log("📁 'uploads' folder created automatically");
-// }
-
-// app.use(express.json());
-// app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, "dist")));
-
-// // app.use(
-// //   cors({
-// //     origin: "http://localhost:5173",
-// //     credentials: true,
-// //   })
-// // );
-// app.use(
-//   cors({
-//     origin: [
-//       "http://localhost:5173",
-//       "https://e-solution-website.onrender.com"
-//     ],
-//     credentials: true,
-//   })
-// );
-
-
-
-// // Routes
-// app.use("/api/admin", adminRoutes);
-// app.use("/api/contact", contactRoutes);
-// app.use("/api/users", userRoutes);
-// app.use("/api/feedback", feedbackRoutes);
-// app.use("/api/enquiry", enquiryRoutes);
-// app.use("/api/products", productRoutes);
-
-// app.use("/api/about", aboutRoutes);
-// app.use("/api/services", serviceRoutes);
-// app.use("/api/superadmin", superAdminRoutes);
-// app.use("/api/logs", activityRoutes);
-
-// // 404 Handler
-// app.use((req, res) => {
-//   res.status(404).json({ message: "Resource Not Found" });
-// });
-
-// // Error Handler
-// app.use((err, req, res, next) => {
-//   console.log(err);
-//   res.status(500).json({ message: err.message || "Something Went Wrong" });
-// });
-
-
-// // MongoDB Connection
-// mongoose.connect(process.env.MONGO_URL);
-
-// mongoose.connection.on("connected", () => {
-//   console.log("✅ MONGO CONNECTED");
-//   app.listen(process.env.PORT, () => {
-//     console.log(`🚀 SERVER RUNNING on port ${process.env.PORT}`);
-//   });
-// });
-
-// mongoose.connection.on("error", (err) => {
-//   console.error("❌ MONGO CONNECTION ERROR:", err);
-// });
-
-
 
 
 import express from "express";
@@ -105,19 +11,33 @@ import fs from "fs";
 
 // Routes
 import adminRoutes from "./routes/adminRoutes.js";
+import heroRoutes from "./routes/admin/heroRoutes.js";
+import navbarRoutes from "./routes/admin/navbarRoutes.js"
+import aboutRoutes from "./routes/admin/aboutRoutes.js";
+import serviceRoutes from "./routes/admin/serviceRoutes.js";
+import productRoutes from "./routes/admin/productRoutes.js";
+import feedbackRoutes from "./routes/admin/feedbackRoutes.js";
+import footerRoutes from "./routes/admin/footerRoutes.js"
+
 import contactRoutes from "./routes/contactRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import feedbackRoutes from "./routes/feedbackRoutes.js";
-import enquiryRoutes from "./routes/enquiryRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
-import aboutRoutes from "./routes/aboutRoutes.js";
-import serviceRoutes from "./routes/serviceRoutes.js";
-import superAdminRoutes from "./routes/superAdminRoutes.js";
+// import userRoutes from "./routes/userRoutes.js";
+import enquiryRoutes from "./routes/admin/enquiryRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
-import heroRoutes from "./routes/heroRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import navbarRoutes from "./routes/navbarRoutes.js"
-import footerRoutes from "./routes/footerRoutes.js"
+import paymentRoutes from "./routes/admin/paymentRoutes.js";
+
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+import superAdminHeroRoutes from "./routes/superadmin/superAdminHeroRoutes.js";
+import superAdminAboutRoutes from "./routes/superadmin/superAdminAboutRoutes.js";
+import superAdminServiceRoutes from "./routes/superadmin/superAdminServiceRoutes.js";
+import superAdminProductRoutes from "./routes/superadmin/superAdminProductRoutes.js";
+import superAdminEnquiryRoutes from "./routes/superadmin/superAdminEnquiryRoutes.js";
+import superadminpaymentRoutes from "./routes/superadmin/superadminpaymentRoutes.js";
+import superAdminFeedbackRoutes from "./routes/superadmin/superAdminFeedbackRoutes.js";
+import SuperAdminContactRoutes from "./routes/superadmin/SuperAdminContactRoutes.js";
+import superAdminFooterRoutes from "./routes/superadmin/superAdminFooterRoutes.js";
+import superAdminNavbarRoutes from "./routes/superadmin/superAdminNavbarRoutes.js";
+import superadminpaymentSettingsRoutes from "./routes/superadmin/superadminpaymentSettingsRoutes.js";
+
 
 dotenv.config();
 
@@ -149,19 +69,34 @@ app.use(express.static(path.join(__dirname, "dist")));
 
 /* ===================== API ROUTES ===================== */
 app.use("/api/admin", adminRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/feedback", feedbackRoutes);
-app.use("/api/enquiry", enquiryRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/about", aboutRoutes);
-app.use("/api/services", serviceRoutes);
-app.use("/api/superadmin", superAdminRoutes);
-app.use("/api/logs", activityRoutes);
-app.use("/api/payment", paymentRoutes);
-app.use("/api/hero", heroRoutes);
 app.use("/api/navbar", navbarRoutes);
+app.use("/api/hero", heroRoutes);
+app.use("/api/about", aboutRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/enquiry", enquiryRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/footer", footerRoutes);
+app.use("/api/logs", activityRoutes);
+// app.use("/api/users", userRoutes);
+
+// superadmin
+app.use("/api/superadmin", superAdminRoutes);
+
+app.use("/api/superadminnavbar", superAdminNavbarRoutes);
+app.use("/api/superhero", superAdminHeroRoutes);
+app.use("/api/superabout", superAdminAboutRoutes);
+app.use("/api/superadminservices", superAdminServiceRoutes);
+app.use("/api/superadminproducts", superAdminProductRoutes);
+app.use("/api/superadminenquiry", superAdminEnquiryRoutes);
+app.use("/api/superadminepayment", superadminpaymentRoutes);
+app.use("/api/superadminfeedback", superAdminFeedbackRoutes);
+app.use("/api/superadmincontact", SuperAdminContactRoutes);
+app.use("/api/superadminfooter", superAdminFooterRoutes);
+app.use("/api/superadminpaymentsetting", superadminpaymentSettingsRoutes);
+
 
 // 🔥 React SPA fallback — Express v5 SAFE
 app.use((req, res) => {

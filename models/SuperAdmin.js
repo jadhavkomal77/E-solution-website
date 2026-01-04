@@ -1,3 +1,5 @@
+
+
 // import mongoose from "mongoose";
 
 // const superAdminSchema = new mongoose.Schema(
@@ -9,29 +11,34 @@
 //     role: { type: String, default: "superadmin" },
 //     isActive: { type: Boolean, default: true },
 //   },
-//  {
-//     timestamps: true,
-//   }
+//   { timestamps: true }
 // );
 
-// const SuperAdmin = mongoose.model("SuperAdmin", superAdminSchema);
-// export default SuperAdmin;
+// export default mongoose.model("SuperAdmin", superAdminSchema);
 
 
 
 
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const superAdminSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    phone: { type: String },
+    phone: String,
     password: { type: String, required: true },
     role: { type: String, default: "superadmin" },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
+
+// 🔐 Encrypt Password before save
+superAdminSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
 export default mongoose.model("SuperAdmin", superAdminSchema);
