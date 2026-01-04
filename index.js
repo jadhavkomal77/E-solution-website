@@ -31,13 +31,15 @@ import superAdminAboutRoutes from "./routes/superadmin/superAdminAboutRoutes.js"
 import superAdminServiceRoutes from "./routes/superadmin/superAdminServiceRoutes.js";
 import superAdminProductRoutes from "./routes/superadmin/superAdminProductRoutes.js";
 import superAdminEnquiryRoutes from "./routes/superadmin/superAdminEnquiryRoutes.js";
-import superadminpaymentRoutes from "./routes/superadmin/superadminpaymentRoutes.js";
 import superAdminFeedbackRoutes from "./routes/superadmin/superAdminFeedbackRoutes.js";
 import SuperAdminContactRoutes from "./routes/superadmin/SuperAdminContactRoutes.js";
 import superAdminFooterRoutes from "./routes/superadmin/superAdminFooterRoutes.js";
 import superAdminNavbarRoutes from "./routes/superadmin/superAdminNavbarRoutes.js";
-import superadminpaymentSettingsRoutes from "./routes/superadmin/superadminpaymentSettingsRoutes.js";
+// import superadminpaymentRoutes from "./routes/superadmin/superadminpaymentRoutes.js";
+// import superadminpaymentSettingsRoutes from "./routes/superadmin/superadminpaymentSettingsRoutes.js";
 
+import superAdminPaymentRoutes from "./routes/superadmin/superAdminPaymentRoutes.js";
+import superadminpaymentSettingsRoutes from "./routes/superadmin/superadminpaymentSettingsRoutes.js";
 
 dotenv.config();
 
@@ -91,7 +93,7 @@ app.use("/api/superabout", superAdminAboutRoutes);
 app.use("/api/superadminservices", superAdminServiceRoutes);
 app.use("/api/superadminproducts", superAdminProductRoutes);
 app.use("/api/superadminenquiry", superAdminEnquiryRoutes);
-app.use("/api/superadminepayment", superadminpaymentRoutes);
+app.use("/api/superadminepayment", superAdminPaymentRoutes);
 app.use("/api/superadminfeedback", superAdminFeedbackRoutes);
 app.use("/api/superadmincontact", SuperAdminContactRoutes);
 app.use("/api/superadminfooter", superAdminFooterRoutes);
