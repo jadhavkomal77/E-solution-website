@@ -89,7 +89,7 @@
 
 
 
-import Enquiry from "../../models/Enquiry.js";
+import Enquiry from "../../models/admin/Enquiry.js";
 import Product from "../../models/admin/Product.js";
 import validator from "validator";
 import sanitizeHtml from "sanitize-html";

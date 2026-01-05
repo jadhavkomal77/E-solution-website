@@ -196,7 +196,7 @@
 import Admin from "../models/Admin.js";
 import Product from "../models/admin/Product.js";
 import Contact from "../models/Contact.js";
-import Enquiry from "../models/Enquiry.js";
+import Enquiry from "../models/admin/Enquiry.js";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

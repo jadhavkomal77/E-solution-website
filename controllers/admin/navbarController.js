@@ -76,6 +76,59 @@ export const getPublicNavbar = async (req, res) => {
 /* ======================================================
    ADMIN → SAVE / UPDATE NAVBAR (SECURE)
 ====================================================== */
+// export const saveNavbar = async (req, res) => {
+//   try {
+//     const adminId = req.user?.id;
+//     if (!adminId) {
+//       return res.status(403).json({ message: "Unauthorized" });
+//     }
+
+//     let { brandName, tagline, buttons } = req.body;
+
+//     // Validate and sanitize text
+//     brandName = sanitizeHtml(brandName || "");
+//     tagline = sanitizeHtml(tagline || "");
+
+//     // Validate & sanitize menu links
+//   let cleanButtons = [];
+
+// if (Array.isArray(buttons)) {
+//   cleanButtons = buttons.map((btn) => ({
+//     label: sanitizeHtml(btn.label || ""),
+//     section: sanitizeHtml(btn.section || ""),
+//     path: sanitizeHtml(btn.path || ""),
+//     isPrimary: !!btn.isPrimary,
+//     isActive: btn.isActive !== false,
+//     order: Number(btn.order) || 0,
+//   }));
+// }
+
+
+//     const navbar = await Navbar.findOneAndUpdate(
+//       { adminId },
+//       {
+//         adminId,
+//         brandName,
+//         tagline,
+//         buttons: cleanButtons,
+//       },
+//       { new: true, upsert: true }
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Navbar updated successfully",
+//       navbar,
+//     });
+
+//   } catch (err) {
+//     console.error("NAVBAR UPDATE ERROR:", err.message);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// };
+
+
+
 export const saveNavbar = async (req, res) => {
   try {
     const adminId = req.user?.id;
@@ -85,32 +138,31 @@ export const saveNavbar = async (req, res) => {
 
     let { brandName, tagline, buttons } = req.body;
 
-    // Validate and sanitize text
     brandName = sanitizeHtml(brandName || "");
     tagline = sanitizeHtml(tagline || "");
 
-    // Validate & sanitize menu links
-  let cleanButtons = [];
+    const existingNavbar = await Navbar.findOne({ adminId });
 
-if (Array.isArray(buttons)) {
-  cleanButtons = buttons.map((btn) => ({
-    label: sanitizeHtml(btn.label || ""),
-    section: sanitizeHtml(btn.section || ""),
-    path: sanitizeHtml(btn.path || ""),
-    isPrimary: !!btn.isPrimary,
-    isActive: btn.isActive !== false,
-    order: Number(btn.order) || 0,
-  }));
-}
+    let finalButtons = existingNavbar?.buttons || [];
 
+    if (Array.isArray(buttons) && buttons.length > 0) {
+      finalButtons = buttons.map((btn) => ({
+        label: sanitizeHtml(btn.label || ""),
+        section: sanitizeHtml(btn.section || ""),
+        path: sanitizeHtml(btn.path || ""),
+        isPrimary: !!btn.isPrimary,
+        isActive: btn.isActive !== false,
+        order: Number(btn.order) || 0,
+      }));
+    }
 
     const navbar = await Navbar.findOneAndUpdate(
       { adminId },
       {
         adminId,
-        brandName,
-        tagline,
-        buttons: cleanButtons,
+        brandName: brandName || existingNavbar?.brandName,
+        tagline: tagline || existingNavbar?.tagline,
+        buttons: finalButtons, // ✅ SAFE
       },
       { new: true, upsert: true }
     );
@@ -120,7 +172,6 @@ if (Array.isArray(buttons)) {
       message: "Navbar updated successfully",
       navbar,
     });
-
   } catch (err) {
     console.error("NAVBAR UPDATE ERROR:", err.message);
     res.status(500).json({ message: "Server Error" });

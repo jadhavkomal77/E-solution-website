@@ -25,40 +25,13 @@ router.get("/public/:slug/:id", getSingleProductPublic);
 /* ====================================================
    🔐 ADMIN ROUTES — Protected by Token
 ==================================================== */
-router.post(
-  "/add",
-  verifyToken,
-  adminOnly,
-  uploadSingle("image"), // 📌 Product image upload
-  addProduct
-);
+router.post("/add",verifyToken,adminOnly, uploadSingle("image"), addProduct)
 
-router.get(
-  "/all",
-  verifyToken,
-  adminOnly,
-  getProducts
-);
-router.get(
-  "/:id",
-  verifyToken,
-  adminOnly,
-  getAdminSingleProduct
-);
+router.get("/all", verifyToken, adminOnly, getProducts);
+router.get("/:id", verifyToken,adminOnly, getAdminSingleProduct);
 
-router.put(
-  "/update/:id",
-  verifyToken,
-  adminOnly,
-  uploadSingle("image"), // 📌 image optional
-  updateProduct
-);
+router.put("/update/:id",verifyToken,adminOnly,uploadSingle("image"),updateProduct);
 
-router.delete(
-  "/delete/:id",
-  verifyToken,
-  adminOnly,
-  deleteProduct
-);
+router.delete( "/delete/:id",verifyToken,adminOnly,deleteProduct);
 
 export default router;
