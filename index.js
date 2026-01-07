@@ -43,25 +43,25 @@ const __dirname = path.resolve();
 app.use(express.json());
 app.use(cookieParser());
 
-// app.use(
-//   cors({
-//     origin: [
-//       "http://localhost:5173",
-//       "https://e-solution-website.vercel.app",
-//     ],
-//     credentials: true,
-//   })
-// );
-
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://e-solution-website.onrender.com",
+      "https://e-solution-website.vercel.app",
     ],
     credentials: true,
   })
 );
+
+// app.use(
+//   cors({
+//     origin: [
+//       "http://localhost:5173",
+//       "https://e-solution-website.onrender.com",
+//     ],
+//     credentials: true,
+//   })
+// );
 
 /* ================= UPLOADS FOLDER ================= */
 const uploadDir = path.join(__dirname, "uploads");
