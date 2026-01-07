@@ -1,7 +1,7 @@
 
 
 import SuperAdminProduct from "../../models/superadmin/SuperAdminProduct.js";
-import cloudinary from "../../utils/cloudinary.config.js";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
 import sanitizeHtml from "sanitize-html";
 import validator from "validator";
 
@@ -30,10 +30,12 @@ export const addSuperProduct = async (req, res) => {
     cleanData.createdBy = req.user.id;
 
     // 📷 Image Upload (Optional)
-    if (req.file) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path, {
-        folder: "superadmin-products",
-      });
+    if (req.file && req.file.buffer) {
+      const uploaded = await uploadToCloudinary(
+        req.file.buffer,
+        "superadmin-products",
+        req.file.originalname
+      );
       cleanData.image = uploaded.secure_url;
     }
 
@@ -103,10 +105,12 @@ export const updateSuperProduct = async (req, res) => {
 
     const cleanData = sanitizeProduct(req.body);
 
-    if (req.file) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path, {
-        folder: "superadmin-products",
-      });
+    if (req.file && req.file.buffer) {
+      const uploaded = await uploadToCloudinary(
+        req.file.buffer,
+        "superadmin-products",
+        req.file.originalname
+      );
       cleanData.image = uploaded.secure_url;
     }
 

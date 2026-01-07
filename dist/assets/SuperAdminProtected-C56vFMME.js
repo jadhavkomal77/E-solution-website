@@ -1,0 +1,1 @@
+import{a5 as n,j as r,N as a}from"./index-CZT2epyM.js";function u({children:e}){const{data:o,isLoading:i,isError:t}=n();return i?r.jsx("div",{children:"Loading..."}):t?r.jsx(a,{to:"/superadminlogin"}):e}export{u as default};

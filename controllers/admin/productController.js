@@ -1,7 +1,7 @@
 
 import Product from "../../models/admin/Product.js";
 import Admin from "../../models/Admin.js";
-import cloudinary from "../../utils/cloudinary.config.js";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
 import validator from "validator";
 import sanitizeHtml from "sanitize-html";
 
@@ -29,10 +29,12 @@ export const addProduct = async (req, res) => {
     const cleanData = sanitizeProductFields(req.body);
 
     let imageUrl = "";
-    if (req.file) {
-      const upload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "products",
-      });
+    if (req.file && req.file.buffer) {
+      const upload = await uploadToCloudinary(
+        req.file.buffer,
+        "products",
+        req.file.originalname
+      );
       imageUrl = upload.secure_url;
     }
 
@@ -155,10 +157,12 @@ export const updateProduct = async (req, res) => {
 
     const cleanData = sanitizeProductFields(req.body);
 
-    if (req.file) {
-      const upload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "products",
-      });
+    if (req.file && req.file.buffer) {
+      const upload = await uploadToCloudinary(
+        req.file.buffer,
+        "products",
+        req.file.originalname
+      );
       cleanData.image = upload.secure_url;
     }
 

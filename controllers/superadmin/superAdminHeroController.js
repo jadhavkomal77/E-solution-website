@@ -1,37 +1,3 @@
-// import SuperAdminHero from "../../models/superadmin/SuperAdminHero.js";
-
-// // Create or Update Hero Section
-// export const saveSuperAdminHero = async (req, res) => {
-//   try {
-//     const data = req.body;
-
-//     const hero = await SuperAdminHero.findOneAndUpdate(
-//       {},
-//       data,
-//       { upsert: true, new: true }
-//     );
-
-//     res.json({
-//       success: true,
-//       message: "SuperAdmin Hero Updated Successfully",
-//       hero,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Get Hero Data for Public Website
-// export const getSuperAdminHero = async (req, res) => {
-//   try {
-//     const hero = await SuperAdminHero.findOne();
-//     res.json({ success: true, hero });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-
 
 import SuperAdminHero from "../../models/superadmin/SuperAdminHero.js";
 import sanitizeHtml from "sanitize-html";

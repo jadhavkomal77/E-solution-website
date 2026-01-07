@@ -1,115 +1,19 @@
 
-
-
-// import SuperAdmin from "../models/SuperAdmin.js";
-// import Admin from "../models/Admin.js";
-// import Product from "../models/Product.js";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-// import Upload from "../utils/upload.js";
-// import cloudinary from "../utils/cloudinary.config.js";
-// import { logActivity } from "../utils/logActivity.js";
-
-// const JWT_SECRET = process.env.JWT_KEY || "defaultsecret";
-
-
-// // REGISTER SUPERADMIN
-// export const superAdminRegister = async (req, res) => {
-//   try {
-//     const { name, email, password, phone } = req.body;
-
-//     const exists = await SuperAdmin.findOne({ email });
-//     if (exists)
-//       return res.status(400).json({ message: "Email already registered" });
-
-//     const superAdmin = await SuperAdmin.create({
-//       name,
-//       email,
-//       phone,
-//       password,
-//     });
-
-//     res.json({ success: true, message: "Registration Successful", superAdmin });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-// // LOGIN SUPERADMIN
-// export const superAdminLogin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const superAdmin = await SuperAdmin.findOne({ email });
-//     if (!superAdmin)
-//       return res.status(404).json({ message: "Invalid Email" });
-
-//     const match = await bcrypt.compare(password, superAdmin.password);
-//     if (!match)
-//       return res.status(401).json({ message: "Invalid Password" });
-
-//     const token = jwt.sign(
-//       { id: superAdmin._id, role: "superadmin" },
-//       JWT_SECRET,
-//       { expiresIn: "7d" }
-//     );
-
-//     res.cookie("superToken", token, {
-//       httpOnly: true,
-//       sameSite: "strict",
-//       secure: false,
-//     });
-
-//     await logActivity(
-//       superAdmin._id,
-//       "superadmin",
-//       "Login",
-//       `${superAdmin.name} logged in`,
-//       req.ip
-//     );
-
-//     res.json({
-//       success: true,
-//       message: "Login Successful",
-//       token,
-//       superAdmin: {
-//         id: superAdmin._id,
-//         name: superAdmin.name,
-//         email: superAdmin.email,
-//         phone: superAdmin.phone,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-// // LOGOUT
-// export const superAdminLogout = async (req, res) => {
-//   res.clearCookie("superToken");
-//   res.json({ success: true, message: "Logged Out" });
-// };
-
-
-
 import SuperAdmin from "../models/SuperAdmin.js";
 import Admin from "../models/Admin.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { uploadSingle } from "../utils/upload.js";
-import cloudinary from "../utils/cloudinary.config.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import { logActivity } from "../utils/logActivity.js";
 import BlacklistedToken from "../models/BlacklistedToken.js";
 
 const JWT_SECRET = process.env.JWT_KEY;
 
-// const cookieOptions = {
-//   httpOnly: true,
-//   sameSite: "strict",
-//   secure: process.env.NODE_ENV === "production"
-// };
 const cookieOptions = {
   httpOnly: true,
-  secure: false,  // local dev
-  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
   path: "/"
 };
 
@@ -219,10 +123,12 @@ export const updateSuperAdminProfile = async (req, res) => {
       const { name, email, phone } = req.body;
       let updateData = { name, email, phone };
 
-      if (req.file) {
-        const upload = await cloudinary.uploader.upload(req.file.path, {
-          folder: "superadmin_profiles",
-        });
+      if (req.file && req.file.buffer) {
+        const upload = await uploadToCloudinary(
+          req.file.buffer,
+          "superadmin_profiles",
+          req.file.originalname
+        );
         updateData.profile = upload.secure_url;
       }
 

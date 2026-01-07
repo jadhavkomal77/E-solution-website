@@ -23,4 +23,9 @@ const superAdminProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Performance indexes
+superAdminProductSchema.index({ superAdminId: 1 });
+superAdminProductSchema.index({ superAdminId: 1, status: 1 });
+superAdminProductSchema.index({ category: 1 });
+
 export default mongoose.model("SuperAdminProduct", superAdminProductSchema);

@@ -1,26 +1,19 @@
-import express from "express";
-import {
-  getAdminPayment,
-  saveAdminPayment,
-  deleteAdminPayment,
-  getPublicPayment,
-} from "../../controllers/admin/paymentController.js";
 
-import { verifyToken, adminOnly } from "../../middleware/authMiddleware.js";
-import { attachAdminId } from "../../middleware/assignId.js";
+// routes/paymentRoutes.js
+import express from "express";
+import { createRazorpayOrder, getAdminPayment, getPublicPaymentBySlug, updateAdminPayment, verifyRazorpayPayment } from "../../controllers/admin/paymentController.js";
+import { adminOnly, verifyToken } from "../../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-/* 🔐 ADMIN */
-router.get("/admin", verifyToken, adminOnly, attachAdminId, getAdminPayment);
-router.post("/", verifyToken, adminOnly, attachAdminId, saveAdminPayment);
-router.delete("/", verifyToken, adminOnly, attachAdminId, deleteAdminPayment);
+router.get("/admin", verifyToken, adminOnly, getAdminPayment);
+router.put("/admin", verifyToken, adminOnly, updateAdminPayment);
 
-/* 🌍 PUBLIC */
-router.get("/public/:slug", getPublicPayment);
+router.get("/public/:slug", getPublicPaymentBySlug);
+
+router.post("/razorpay/order", createRazorpayOrder);
+router.post("/razorpay/verify", verifyRazorpayPayment);
+
 
 export default router;
-
-
-
 

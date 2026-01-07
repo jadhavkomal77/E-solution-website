@@ -1,117 +1,209 @@
 
+
 import Admin from "../../models/Admin.js";
 import Payment from "../../models/admin/Payment.js";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+import validator from "validator";
+import sanitizeHtml from "sanitize-html";
 
-/* ======================
-   🔐 ADMIN
-====================== */
-
-// GET
+/* =====================================================
+   🔐 ADMIN : Get own payment settings
+===================================================== */
 export const getAdminPayment = async (req, res) => {
-  const payment = await Payment.findOne({ adminId: req.adminId });
-  res.json(payment);
-};
+  try {
+    const adminId = req.admin._id;
 
-// ADD / UPDATE
-export const saveAdminPayment = async (req, res) => {
-  const payment = await Payment.findOneAndUpdate(
-    { adminId: req.adminId },
-    { ...req.body, adminId: req.adminId },
-    { new: true, upsert: true }
-  );
+    const settings = await Payment.findOne({ adminId });
 
-  res.json({ success: true, payment });
-};
-
-// DELETE
-export const deleteAdminPayment = async (req, res) => {
-  await Payment.findOneAndDelete({ adminId: req.adminId });
-  res.json({ success: true });
-};
-
-/* ======================
-   🌍 PUBLIC
-====================== */
-
-export const getPublicPayment = async (req, res) => {
-  const { slug } = req.params;
-
-  const admin = await Admin.findOne({
-    websiteSlug: slug,
-    isActive: true,
-  });
-
-  if (!admin) {
-    return res.status(404).json({ message: "Website not found" });
+    res.json({
+      success: true,
+      data: settings || null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  const payment = await Payment.findOne({
-    adminId: admin._id,
-    isActive: true,
-  });
-
-  // IMPORTANT: return clean object
-  if (!payment) return res.json(null);
-
-  res.json({
-    upiId: payment.upiId || "",
-    phone: payment.phone || "",
-    bankName: payment.bankName || "",
-    accountNumber: payment.accountNumber || "",
-    ifsc: payment.ifsc || "",
-    isActive: payment.isActive,
-  });
 };
 
+/* =====================================================
+   🔐 ADMIN : Create / Update payment settings
+===================================================== */
+export const updateAdminPayment = async (req, res) => {
+  try {
+    const adminId = req.admin._id;
 
+    const cleanBody = {
+      razorpayEnabled: req.body.razorpayEnabled,
+      razorpayKeyId: sanitizeHtml(req.body.razorpayKeyId || ""),
+      razorpayKeySecret: sanitizeHtml(req.body.razorpayKeySecret || ""),
+      isActive: req.body.isActive,
+    };
 
+    const settings = await Payment.findOneAndUpdate(
+      { adminId },
+      cleanBody,
+      { upsert: true, new: true }
+    );
 
+    res.json({
+      success: true,
+      message: "Payment settings updated successfully",
+      data: settings,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Update failed" });
+  }
+};
 
+/* =====================================================
+   🌍 PUBLIC : Get payment config by website slug
+===================================================== */
+export const getPublicPaymentBySlug = async (req, res) => {
+  try {
+    const cleanSlug = sanitizeHtml(req.params.slug?.toLowerCase());
 
+    if (!cleanSlug) {
+      return res.status(400).json({ message: "Slug missing" });
+    }
 
+    const admin = await Admin.findOne({
+      websiteSlug: cleanSlug,
+      isActive: true,
+    }).select("name websiteSlug");
 
+    if (!admin) {
+      return res.status(404).json({ message: "Website not found" });
+    }
 
-// import crypto from "crypto";
-// import razorpay from "../../utils/razorpay.js";
+    const payment = await Payment.findOne({
+      adminId: admin._id,
+      razorpayEnabled: true,
+      isActive: true,
+    }).select("-razorpayKeySecret");
 
-// export const createRazorpayOrder = async (req, res) => {
-//   try {
-//     const { amount } = req.body;
+    res.json({
+      success: true,
+      admin,
+      payment,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
-//     const order = await razorpay.orders.create({
-//       amount: amount * 100, // INR → paise
-//       currency: "INR",
-//       receipt: "receipt_" + Date.now(),
-//     });
+/* =====================================================
+   💳 RAZORPAY : Create Order (PUBLIC)
+===================================================== */
+export const createRazorpayOrder = async (req, res) => {
+  try {
+    const { slug, amount } = req.body;
 
-//     res.json({ success: true, order });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
+    if (!validator.isNumeric(amount?.toString()) || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
 
-// export const verifyRazorpayPayment = async (req, res) => {
-//   try {
-//     const {
-//       razorpay_order_id,
-//       razorpay_payment_id,
-//       razorpay_signature,
-//     } = req.body;
+    const cleanSlug = sanitizeHtml(slug?.toLowerCase());
 
-//     const body =
-//       razorpay_order_id + "|" + razorpay_payment_id;
+    const admin = await Admin.findOne({
+      websiteSlug: cleanSlug,
+      isActive: true,
+    });
 
-//     const expectedSignature = crypto
-//       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-//       .update(body)
-//       .digest("hex");
+    if (!admin) {
+      return res.status(404).json({ message: "Invalid website" });
+    }
 
-//     if (expectedSignature === razorpay_signature) {
-//       return res.json({ success: true });
-//     }
+    const settings = await Payment.findOne({
+      adminId: admin._id,
+      razorpayEnabled: true,
+      isActive: true,
+    });
 
-//     res.status(400).json({ success: false });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
+    if (!settings?.razorpayKeyId || !settings?.razorpayKeySecret) {
+      return res.status(400).json({ message: "Razorpay not configured" });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: settings.razorpayKeyId,
+      key_secret: settings.razorpayKeySecret,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: Number(amount) * 100,
+      currency: "INR",
+      receipt: `order_${Date.now()}`,
+      notes: {
+        adminId: admin._id.toString(),
+        website: admin.websiteSlug,
+      },
+    });
+
+    res.json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error("Razorpay Order Error:", error);
+    res.status(500).json({ message: "Razorpay order failed" });
+  }
+};
+
+/* =====================================================
+   🔐 RAZORPAY : Verify Payment (MANDATORY FOR LIVE)
+===================================================== */
+export const verifyRazorpayPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      slug,
+    } = req.body;
+
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).json({ message: "Missing payment details" });
+    }
+
+    const cleanSlug = sanitizeHtml(slug?.toLowerCase());
+
+    const admin = await Admin.findOne({
+      websiteSlug: cleanSlug,
+      isActive: true,
+    });
+
+    if (!admin) {
+      return res.status(404).json({ message: "Invalid website" });
+    }
+
+    const settings = await Payment.findOne({
+      adminId: admin._id,
+      razorpayEnabled: true,
+    });
+
+    const generatedSignature = crypto
+      .createHmac("sha256", settings.razorpayKeySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed",
+      });
+    }
+
+    // ✅ Here you should save Order/Payment status in DB
+
+    res.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
+  } catch (error) {
+    console.error("Verify Error:", error);
+    res.status(500).json({ message: "Verification failed" });
+  }
+};

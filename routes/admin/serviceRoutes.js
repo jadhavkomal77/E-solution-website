@@ -1,26 +1,11 @@
 import express from "express";
-// import {
-//   addService,
-//   getServices,
-//   getServiceById,
-//   updateService,
-//   deleteService
-// } from "..";
-
 import { verifyToken, adminOnly } from "../../middleware/authMiddleware.js";
 import Admin from "../../models/Admin.js";
-
 import { addService, deleteService, getServiceById, getServices, updateService } from "../../controllers/admin/serviceController.js";
 import Service from "../../models/admin/Service.js";
 
 const router = express.Router();
 
-/* =======================
-   🌐 PUBLIC ROUTES (NO AUTH)
-======================= */
-
-// Get services by website slug
-// 🌍 PUBLIC → Get services by website slug
 router.get("/public/:slug", async (req, res) => {
   try {
     const { slug } = req.params;

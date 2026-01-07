@@ -12,19 +12,14 @@ import {
 } from "../../controllers/admin/productController.js";
 
 import { verifyToken, adminOnly } from "../../middleware/authMiddleware.js";
-import { uploadSingle } from "../../utils/upload.js"; 
+import { uploadSingle } from "../../utils/upload.js";
+
 
 const router = express.Router();
 
-/* ====================================================
-   🌍 PUBLIC ROUTES — Visible on User Website
-==================================================== */
-router.get("/public/:slug", getPublicProductsBySlug);
-router.get("/public/:slug/:id", getSingleProductPublic);
+router.get("/public/:slug", getPublicProductsBySlug); 
+router.get("/public/:slug/:id", getSingleProductPublic); 
 
-/* ====================================================
-   🔐 ADMIN ROUTES — Protected by Token
-==================================================== */
 router.post("/add",verifyToken,adminOnly, uploadSingle("image"), addProduct)
 
 router.get("/all", verifyToken, adminOnly, getProducts);
