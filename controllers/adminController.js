@@ -15,11 +15,24 @@ import Feedback from "../models/admin/Feedback.js";
 const JWT_SECRET = process.env.JWT_KEY;
 
 // Secure Cookies
-const cookieOptions = {
-  httpOnly: true,
-  sameSite: "strict",
-  secure: process.env.NODE_ENV === "production",
-};
+// const cookieOptions = {
+//   httpOnly: true,
+//   sameSite: "strict",
+//   secure: process.env.NODE_ENV === "production",
+// };
+const cookieOptions =
+  process.env.NODE_ENV === "production"
+    ? {
+        httpOnly: true,
+        sameSite: "none", // ✅ cross-domain allow
+        secure: true,     // ✅ https only
+      }
+    : {
+        httpOnly: true,
+        sameSite: "lax",  // ✅ localhost allow
+        secure: false,
+      };
+
 
 // ⭐ ADMIN LOGIN
 export const adminLogin = async (req, res) => {
@@ -44,17 +57,29 @@ export const adminLogin = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    // res.cookie("adminToken", token, cookieOptions);
+
+    // res.json({
+    //   success: true,
+    //   message: "Login Success",
+    //   admin: {
+    //     id: admin._id,
+    //     name: admin.name,
+    //     email: admin.email,
+    //   },
+    // });
     res.cookie("adminToken", token, cookieOptions);
 
-    res.json({
-      success: true,
-      message: "Login Success",
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-      },
-    });
+res.json({
+  success: true,
+  message: "Login Success",
+  admin: {
+    id: admin._id,
+    name: admin.name,
+    email: admin.email,
+  },
+});
+
   } catch {
     res.status(500).json({ message: "Server Error" });
   }
@@ -71,8 +96,11 @@ export const adminLogout = async (req, res) => {
         expiresAt: new Date(decoded.exp * 1000),
       });
     }
+    // res.clearCookie("adminToken", cookieOptions);
+    // res.json({ success: true, message: "Logged Out Successfully" });
     res.clearCookie("adminToken", cookieOptions);
-    res.json({ success: true, message: "Logged Out Successfully" });
+res.json({ success: true, message: "Logged Out Successfully" });
+
   } catch {
     res.status(500).json({ message: "Logout Error" });
   }
