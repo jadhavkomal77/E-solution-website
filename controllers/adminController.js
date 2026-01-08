@@ -24,12 +24,12 @@ const cookieOptions =
   process.env.NODE_ENV === "production"
     ? {
         httpOnly: true,
-        sameSite: "none", // ✅ cross-domain allow
-        secure: true,     // ✅ https only
+        sameSite: "none", 
+        secure: true,   
       }
     : {
         httpOnly: true,
-        sameSite: "lax",  // ✅ localhost allow
+        sameSite: "lax", 
         secure: false,
       };
 

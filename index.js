@@ -63,17 +63,19 @@ app.use(
 //   })
 // );
 
-/* ================= UPLOADS FOLDER ================= */
+
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-/* ================= STATIC FRONTEND ================= */
-app.use(express.static(path.join(__dirname, "dist", "index.html")));
+
+// app.use(express.static(path.join(__dirname, "dist", "index.html")));
+app.use(express.static(path.join(__dirname, "dist")));
 
 
-// TENANT PUBLIC + ADMIN
+
+
 app.use("/api/admin", adminRoutes);
 
 app.use("/api/navbar", navbarRoutes);
@@ -105,17 +107,23 @@ app.use("/api/superadminpayment", superAdminPaymentRoutes);
 app.use("/api/superadminpaymentsetting", superAdminPaymentSettingRoutes);
 
 /* ================= REACT SPA FALLBACK (IMPORTANT) ================= */
+// app.get(/^(?!\/api).*/, (req, res) => {
+//   res.sendFile(path.join(__dirname, "dist", "index.html"));
+// });
+
+
 app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-/* ================= ERROR HANDLER ================= */
+
+
 app.use((err, req, res, next) => {
   console.error("ERROR:", err);
   res.status(500).json({ message: "Server Error" });
 });
 
-/* ================= DATABASE + SERVER ================= */
+
 const PORT = process.env.PORT || 5000;
 
 mongoose

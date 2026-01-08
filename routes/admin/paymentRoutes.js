@@ -1,19 +1,21 @@
-
-// routes/paymentRoutes.js
 import express from "express";
-import { createRazorpayOrder, getAdminPayment, getPublicPaymentBySlug, updateAdminPayment, verifyRazorpayPayment } from "../../controllers/admin/paymentController.js";
-import { adminOnly, verifyToken } from "../../middleware/authMiddleware.js";
+
+import { getMyPaymentSettings, getPublicPaymentSettings, upsertPaymentSettings } from "../../controllers/admin/paymentController.js";
+import { adminOnly } from "../../middleware/authMiddleware.js";
+import { uploadSingle } from "../../utils/upload.js";
 
 const router = express.Router();
 
-router.get("/admin", verifyToken, adminOnly, getAdminPayment);
-router.put("/admin", verifyToken, adminOnly, updateAdminPayment);
+/* Admin Panel */
+router.get("/payment", adminOnly, getMyPaymentSettings);
 
-router.get("/public/:slug", getPublicPaymentBySlug);
+router.post(
+  "/payment",
+  adminOnly,
+  uploadSingle("qrImage"),
+  upsertPaymentSettings
+);
 
-router.post("/razorpay/order", createRazorpayOrder);
-router.post("/razorpay/verify", verifyRazorpayPayment);
-
+router.get("/payment/:slug", getPublicPaymentSettings);
 
 export default router;
-
