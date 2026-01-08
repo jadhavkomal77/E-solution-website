@@ -70,10 +70,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 
-// app.use(express.static(path.join(__dirname, "dist", "index.html")));
-app.use(express.static(path.join(__dirname, "dist")));
-
-
+app.use(express.static(path.join(__dirname, "dist", "index.html")));
 
 
 app.use("/api/admin", adminRoutes);
@@ -106,10 +103,6 @@ app.use("/api/superadminfooter", superAdminFooterRoutes);
 app.use("/api/superadminpayment", superAdminPaymentRoutes);
 app.use("/api/superadminpaymentsetting", superAdminPaymentSettingRoutes);
 
-/* ================= REACT SPA FALLBACK (IMPORTANT) ================= */
-// app.get(/^(?!\/api).*/, (req, res) => {
-//   res.sendFile(path.join(__dirname, "dist", "index.html"));
-// });
 
 
 app.get(/^(?!\/api).*/, (req, res) => {
