@@ -70,7 +70,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 /* ================= STATIC FRONTEND ================= */
-app.use(express.static(path.join(__dirname, "dist")));
+app.use(express.static(path.join(__dirname, "dist", "index.html")));
 
 
 // TENANT PUBLIC + ADMIN
