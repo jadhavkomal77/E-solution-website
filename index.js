@@ -119,7 +119,7 @@ app.get(/^(?!\/api).*/, (req, res) => {
 
 
 app.use((err, req, res, next) => {
-  console.error("ERROR:", err);
+  console.error("ERROR:", err)
   res.status(500).json({ message: "Server Error" });
 });
 
